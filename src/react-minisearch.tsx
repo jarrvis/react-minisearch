@@ -12,7 +12,7 @@ export interface UseMiniSearch<T = any> {
   addAllAsync: (documents: T[], options?: { chunkSize?: number }) => Promise<void>,
   remove: (document: T) => void,
   removeById: (id: any) => void,
-  removeAll: (documents?: T[]) => void,
+  removeAll: (documents?: T[], options?: { ignoreIfMissing?: boolean }) => void,
   isIndexing: boolean,
   clearSearch: () => void,
   clearSuggestions: () => void,
@@ -84,11 +84,14 @@ export function useMiniSearch<T = any> (documents: T[], options: Options<T>): Us
     documentByIdRef.current = removeFromMap<T>(documentById, id)
   }
 
-  const removeAll = function (documents?: T[]): void {
-    if (arguments.length === 0) {
+  const removeAll = (documents?: T[], options?: { ignoreIfMissing?: boolean }): void => {
+    if (!documents) {
       miniSearch.removeAll()
       documentByIdRef.current = {}
     } else {
+      if (options?.ignoreIfMissing) {
+        documents = documents.filter(document => documentById[extractField(document, idField)])
+      }
       miniSearch.removeAll(documents)
       const idsToRemove = documents.map((doc) => extractField(doc, idField))
       documentByIdRef.current = removeManyFromMap<T>(documentById, idsToRemove)
